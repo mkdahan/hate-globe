@@ -1,0 +1,12 @@
+# local test screenshots (the README uses docs/hate-globe.png)
+shot_*.png
+shot_*.jpg
+
+# large raw UN dump if regenerated locally
+un_voting.csv
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+desktop.ini
+

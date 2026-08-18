@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>גלובוס השנאה</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;800&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b141c;
+    --panel: #111d27;
+    --panel2: #16242f;
+    --border: #2a3b49;
+    --text: #e8eef3;
+    --muted: #93a4b1;
+    --gold: #d9b45b;
+    --red: #c0392b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: "Heebo", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ------------ כותרת ------------ */
+  header {
+    padding: 10px 18px 8px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #101c27, #0b141c);
+    flex: 0 0 auto;
+  }
+  header h1 {
+    font-size: 20px; font-weight: 800; letter-spacing: 0.2px;
+  }
+  header h1 span { color: var(--gold); }
+  header p.sub {
+    font-size: 12.5px; color: var(--muted); margin-top: 2px; max-width: 1100px;
+  }
+
+  /* ------------ דירוג העמים ------------ */
+  .rank-hint { font-size: 12px; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
+  .rank-scroll { max-height: 55vh; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; }
+  .rank-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .rank-table th {
+    position: sticky; top: 0; background: var(--panel2); color: var(--muted);
+    font-size: 11.5px; font-weight: 600; text-align: right; padding: 7px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .rank-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); }
+  .rank-row { cursor: pointer; }
+  .rank-row:hover { background: var(--panel2); }
+  .rank-row.rank-current { background: rgba(212,175,55,.12); }
+  .rank-pos { width: 40px; text-align: center; }
+  .rank-name { font-weight: 600; }
+  .rank-civ { color: var(--muted); font-weight: 400; font-size: 11.5px; }
+  .rank-perps { text-align: center; color: var(--gold); font-weight: 700; }
+  .rank-total { text-align: left; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  /* ------------ סרגל כלים ------------ */
+  .tb-select {
+    font-family: inherit; font-size: 13.5px; font-weight: 600;
+    background: var(--panel2); color: var(--gold);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px 10px; cursor: pointer; max-width: 240px;
+  }
+  .tb-select:hover { border-color: var(--gold); }
+  #toolbar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+    padding: 8px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    flex: 0 0 auto;
+  }
+  .tb-group {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 8px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .tb-label { font-size: 12px; color: var(--muted); }
+  .btn {
+    font-family: inherit; font-size: 13px; font-weight: 600;
+    color: var(--text); background: #1d2f3d;
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 5px 12px; cursor: pointer; transition: 0.15s;
+  }
+  .btn:hover { background: #27404f; }
+  .btn.active { background: var(--gold); color: #1a1408; border-color: var(--gold); }
+  .btn.gold { background: var(--gold); color: #1a1408; border-color: var(--gold); }
+  .btn.gold:hover { filter: brightness(1.08); }
+  .btn.small { font-size: 12px; padding: 4px 10px; }
+  .btn.ghost { background: transparent; }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12.5px; font-weight: 600;
+    padding: 3px 10px; border-radius: 20px; cursor: pointer;
+    border: 1px solid var(--border);
+    background: #17232c; color: var(--muted);
+    user-select: none;
+  }
+  .chip input { display: none; }
+  .chip i {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--c); opacity: 0.35;
+  }
+  .chip.on { color: var(--text); border-color: var(--c); }
+  .chip.on i { opacity: 1; }
+  .chip-x {
+    border: none; background: none; color: var(--muted);
+    cursor: pointer; font-size: 11px; margin-inline-start: 2px;
+  }
+  .chip-x:hover { color: #ff7b6b; }
+
+  label.check {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12.5px; color: var(--muted); cursor: pointer;
+  }
+  label.check input { accent-color: var(--gold); }
+
+  /* ------------ גוף ------------ */
+  /* overflow:hidden חיוני – הפאנל המוסתר משמאל מרחיב אחרת את העמוד ב-RTL */
+  #main { flex: 1 1 auto; display: flex; position: relative; min-height: 0; overflow: hidden; }
+  #chartdiv { flex: 1 1 auto; min-width: 0; }
+
+  /* ------------ מקרא ------------ */
+  #legend {
+    position: absolute; bottom: 18px; right: 18px; z-index: 5;
+    background: rgba(13, 22, 30, 0.92);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; width: 240px;
+    font-size: 11.5px; color: var(--muted);
+  }
+  #legend .lg-title { color: var(--text); font-weight: 600; font-size: 12.5px; margin-bottom: 6px; }
+  #legend .lg-bar {
+    height: 12px; border-radius: 6px;
+    background: linear-gradient(270deg, #fff5f0, #e89080 45%, #b32218 75%, #500008);
+    border: 1px solid #3a4a58;
+  }
+  #legend .lg-ticks { display: flex; justify-content: space-between; margin-top: 3px; }
+  #legend .lg-note { margin-top: 6px; font-size: 10.5px; line-height: 1.4; }
+
+  /* ------------ פאנל צד ------------ */
+  #side-panel {
+    position: absolute; top: 0; left: 0; height: 100%;
+    width: 420px; max-width: 92vw;
+    background: var(--panel);
+    border-inline-end: 1px solid var(--border);
+    transform: translateX(-105%);
+    transition: transform 0.25s ease;
+    z-index: 10; display: flex; flex-direction: column;
+    box-shadow: 0 0 30px rgba(0,0,0,0.5);
+  }
+  #side-panel.open { transform: translateX(0); }
+  #side-panel-content { padding: 14px 16px; overflow-y: auto; }
+  .panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .panel-head h2 { font-size: 20px; color: var(--gold); }
+  .panel-sums { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+  .panel-sum { display: flex; align-items: center; gap: 7px; font-size: 14px; }
+  .panel-sum i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+  .panel-events { margin-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .panel-ev {
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 12px;
+  }
+  .pe-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .pe-type {
+    font-size: 11px; font-weight: 700; color: #fff;
+    padding: 1px 8px; border-radius: 10px;
+  }
+  .pe-years { font-size: 12px; color: var(--muted); flex: 1; }
+  .pe-name { font-weight: 700; font-size: 14.5px; }
+  .pe-n { font-size: 13px; margin-top: 2px; }
+  .pe-note { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+  .pe-src { font-size: 11px; color: #6d8091; margin-top: 3px; }
+  .icon-btn {
+    border: none; background: none; color: var(--muted);
+    font-size: 14px; cursor: pointer; padding: 2px 5px; border-radius: 6px;
+  }
+  .icon-btn:hover { background: #22343f; color: var(--text); }
+  .icon-btn.danger:hover { color: #ff7b6b; }
+  .badge {
+    font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 9px;
+    vertical-align: middle;
+  }
+  .badge.ok { background: #14432c; color: #7ee2a8; }
+  .badge.warn { background: #4a3413; color: #f0c869; }
+  .badge.custom { background: #1d3a52; color: #7cc4f0; }
+  .muted { color: var(--muted); font-size: 13px; }
+
+  /* ------------ Tooltip ------------ */
+  .tt { font-family: "Heebo", sans-serif; max-width: 400px; padding: 2px 2px; }
+  .tt-title { font-size: 16px; font-weight: 800; color: #f0c869; margin-bottom: 4px; }
+  .tt-none { font-size: 12px; color: #b9c6d0; }
+  .tt-sums { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+  .tt-sum { font-size: 12.5px; color: #dfe8ee; display: inline-flex; align-items: center; gap: 5px; }
+  .tt-sum i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .tt-events { display: flex; flex-direction: column; gap: 3px; }
+  .tt-ev {
+    display: grid; grid-template-columns: 10px 110px 1fr auto;
+    gap: 6px; align-items: baseline; font-size: 12px; color: #cfdae2;
+  }
+  .tt-ev i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; position: relative; top: -1px; }
+  .tt-years { color: #8fa2af; font-size: 11px; }
+  .tt-name { font-weight: 600; }
+  .tt-n { font-weight: 700; color: #f3b3a6; white-space: nowrap; }
+  .tt-more { font-size: 11px; color: #8fa2af; margin-top: 5px; }
+
+  /* ------------ מודאלים ------------ */
+  .modal {
+    position: fixed; inset: 0; z-index: 50;
+    background: rgba(4, 10, 15, 0.72);
+    display: none; align-items: center; justify-content: center;
+  }
+  .modal.open { display: flex; }
+  .modal-box {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px 22px;
+    width: 440px; max-width: 94vw; max-height: 88vh; overflow-y: auto;
+  }
+  .modal-box h3 { color: var(--gold); margin-bottom: 12px; font-size: 17px; }
+  .field { margin-bottom: 10px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 3px; }
+  .field input[type=text], .field input[type=number], .field select, .field textarea {
+    width: 100%; font-family: inherit; font-size: 13.5px;
+    background: var(--panel2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 10px;
+  }
+  .field textarea { resize: vertical; min-height: 54px; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-start; margin-top: 14px; }
+  .types-row { display: flex; gap: 8px; margin-top: 4px; }
+  .types-row input { flex: 1; }
+
+  footer {
+    flex: 0 0 auto;
+    padding: 5px 18px; font-size: 10.5px; color: #5f7181;
+    border-top: 1px solid var(--border); background: var(--panel);
+  }
+
+  html[lang="en"] body, html[lang="en"] .tt {
+    font-family: Inter, "Segoe UI", sans-serif;
+  }
+  html[dir="ltr"] #side-panel {
+    left: auto; right: 0;
+    transform: translateX(105%);
+  }
+  html[dir="ltr"] #side-panel.open { transform: translateX(0); }
+  html[dir="ltr"] #legend { right: auto; left: 18px; }
+  html[dir="ltr"] #legend .lg-bar {
+    background: linear-gradient(90deg, #fff5f0, #e89080 45%, #b32218 75%, #500008);
+  }
+  html[dir="ltr"] .rank-table th { text-align: left; }
+  html[dir="ltr"] .rank-total { text-align: right; }
+  .lang-toggle .btn { min-width: 44px; }
+    header h1 { font-size: 16px; }
+    #legend { width: 180px; bottom: 10px; right: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span data-i18n="h1Before">🌍 גלובוס השנאה – </span><span id="title-people">היהודים</span></h1>
+  <p class="sub" data-i18n="subtitle">
+    בחרו עם (86 עמים, כולל כל עמי Civilization VI) וראו מי גירש ומי רצח אותו: כל מדינה צבועה לפי סך הנפגעים
+    המשוער שמיוחס לה – לבן = מעט, אדום כהה = הרבה (סולם לוגריתמי).
+    אירוע מיוחס למדינה של ימינו שבשטחה ישב הכובש/המבצע (רומא ← איטליה, מונגוליה ← האימפריה המונגולית, ביזנטיון ← טורקיה).
+    ריחוף מציג את המאורעות; לחיצה פותחת פירוט מלא ועריכה.
+  </p>
+</header>
+
+<div id="toolbar">
+  <div class="tb-group">
+    <span class="tb-label" data-i18n="people">העם:</span>
+    <select id="people-select" class="tb-select" onchange="setPeople(this.value)"></select>
+    <button class="btn small gold" onclick="openRanking()" data-i18n="rankingBtn">🏆 דירוג העמים</button>
+  </div>
+
+  <div class="tb-group">
+    <span class="tb-label" data-i18n="view">תצוגה:</span>
+    <button id="btn-flat" class="btn active" onclick="setGlobeView(false)" data-i18n="map">🗺️ מפה</button>
+    <button id="btn-globe" class="btn" onclick="setGlobeView(true)" data-i18n="globe">🌍 כדור הארץ</button>
+  </div>
+
+  <div class="tb-group">
+    <span class="tb-label" data-i18n="eventTypes">סוגי אירועים:</span>
+    <span id="type-chips" style="display:flex;gap:6px;flex-wrap:wrap"></span>
+    <button class="btn small ghost" onclick="document.getElementById('modal-types').classList.add('open')" data-i18n="manage">⚙ ניהול</button>
+  </div>
+
+  <div class="tb-group">
+    <label class="check"><input type="checkbox" id="chk-unverified" checked> <span data-i18n="includeUnverified">כלול אירועים מסורתיים / לא מאומתים</span></label>
+  </div>
+
+  <div class="tb-group">
+    <button class="btn small" onclick="openAddModal()" data-i18n="addEvent">+ הוספת אירוע</button>
+    <button class="btn small" onclick="downloadPNG()" data-i18n="downloadImg">⬇ הורדת תמונה</button>
+    <button class="btn small" onclick="downloadJSON()" data-i18n="exportData">⬇ ייצוא נתונים</button>
+    <label class="btn small" style="cursor:pointer">
+      <span data-i18n="importData">ייבוא</span> <input type="file" accept=".json" style="display:none" onchange="importJSON(this)">
+    </label>
+    <button class="btn small ghost" onclick="restoreRemoved()" data-i18n="restore">שחזור אירועים שהוסרו</button>
+    <button class="btn small ghost" onclick="resetAll()" data-i18n="reset">איפוס</button>
+  </div>
+
+  <div class="tb-group lang-toggle">
+    <button id="btn-lang-he" class="btn small active" onclick="setLang('he')">עב</button>
+    <button id="btn-lang-en" class="btn small" onclick="setLang('en')">EN</button>
+  </div>
+</div>
+
+<div id="main">
+  <div id="chartdiv"></div>
+
+  <div id="legend">
+    <div class="lg-title" data-i18n="legendLog">סך לפי הסינון (סולם לוגריתמי)</div>
+    <div class="lg-bar"></div>
+    <div class="lg-ticks">
+      <span id="legend-min">0</span>
+      <span id="legend-mid">~1,000</span>
+      <span id="legend-max">1,000,000</span>
+    </div>
+    <div class="lg-note" data-i18n="legendNote">אפור = אין אירועים מתועדים · ❔ = אומדן מסורתי או שנוי במחלוקת</div>
+  </div>
+
+  <div id="side-panel">
+    <div id="side-panel-content"></div>
+  </div>
+</div>
+
+<footer data-i18n="footer">
+  הנתונים מבוססים על מקורות היסטוריים ומחקריים (ויקיפדיה, USHMM – מוזיאון השואה האמריקאי, יד ושם, JJAC, אנציקלופדיה יודאיקה ועוד).
+  אומדנים קדם-מודרניים שנויים במחלוקת בין חוקרים; אירועים מסורתיים סומנו בהתאם וניתן לסננם.
+</footer>
+
+<!-- מודאל: דירוג העמים -->
+<div class="modal" id="modal-ranking">
+  <div class="modal-box" style="max-width:560px">
+    <h3 data-i18n="rankTitle">🏆 דירוג העמים השנואים</h3>
+    <p class="rank-hint" data-i18n="rankHint">
+      המדד: מכמה מדינות/עמים שונים יצאו נגד העם באירועי גירוש ורצח (הצבעות באו"ם אינן נספרות).
+      שוברי שוויון – סך הנפגעים. לחיצה על שורה עוברת למפת העם.
+    </p>
+    <div class="rank-scroll">
+      <table class="rank-table">
+        <thead><tr><th>#</th><th data-i18n="rankPeople">העם</th><th data-i18n="rankPerps">עמים שיצאו נגדו</th><th data-i18n="rankTotal">סך נפגעים</th></tr></thead>
+        <tbody id="ranking-body"></tbody>
+      </table>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-ranking')" data-i18n="close">סגירה</button>
+    </div>
+  </div>
+</div>
+
+<!-- מודאל: הוספת אירוע -->
+<div class="modal" id="modal-add">
+  <div class="modal-box">
+    <h3 data-i18n="addTitle">הוספת אירוע</h3>
+    <div class="field"><label data-i18n="addCountry">מדינה (של ימינו – לפי כלל הכובש/המבצע)</label><select id="ev-country"></select></div>
+    <div class="field"><label data-i18n="addType">סוג אירוע</label><select id="ev-type"></select></div>
+    <div class="field"><label data-i18n="addName">שם המאורע</label><input type="text" id="ev-name" data-i18n-placeholder="addNamePh" placeholder="למשל: גירוש ספרד"></div>
+    <div class="field"><label data-i18n="addYears">שנים</label><input type="text" id="ev-years" data-i18n-placeholder="addYearsPh" placeholder="למשל: 1492 או 1348–1351"></div>
+    <div class="field"><label data-i18n="addCount">אומדן מספר נפגעים</label><input type="number" id="ev-count" min="0" placeholder="150000"></div>
+    <div class="field"><label class="check"><input type="checkbox" id="ev-verified" checked> <span data-i18n="addVerified">אירוע מתועד ומאומת</span></label></div>
+    <div class="field"><label data-i18n="addNote">הערה / מקור (רשות)</label><textarea id="ev-note"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn gold" onclick="submitEvent()" data-i18n="save">שמירה</button>
+      <button class="btn" onclick="closeModal('modal-add')" data-i18n="cancel">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- מודאל: ניהול סוגי אירועים -->
+<div class="modal" id="modal-types">
+  <div class="modal-box">
+    <h3 data-i18n="typesTitle">ניהול סוגי אירועים</h3>
+    <p class="muted" style="margin-bottom:10px" data-i18n="typesHint">
+      סמנו אילו סוגים ייכללו בצביעת המפה ובחישוב. ניתן להוסיף סוגים חדשים
+      (למשל: המרה כפויה, עלילת דם, החרמת רכוש) ולמחוק סוגים שהוספתם.
+    </p>
+    <p class="muted" style="margin-bottom:10px;font-size:11.5px" data-i18n="typesTip">
+      טיפ: את "הצבעות נגד ישראל באו"ם" מומלץ להציג לבד – הצבע נקבע אז לפי
+      אחוז ההצבעות בעד (0%–100%), עם הדרגתיות מלאה. בשילוב עם גירוש/רצח
+      (מיליוני נפגעים) תרומת ההצבעות לצבע זניחה בכוונה.
+    </p>
+    <div class="field">
+      <label data-i18n="typesAdd">הוספת סוג חדש</label>
+      <div class="types-row">
+        <input type="text" id="new-type-name" data-i18n-placeholder="typesAddPh" placeholder="שם הסוג, למשל: המרה כפויה">
+        <button class="btn gold" onclick="addType()" data-i18n="typesAddBtn">הוספה</button>
+      </div>
+    </div>
+    <p class="muted" style="font-size:11.5px" data-i18n="typesBuiltin">הסוגים המובנים (גירוש, רצח) ניתנים לכיבוי בסרגל אך לא למחיקה.</p>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-types')" data-i18n="close">סגירה</button>
+    </div>
+  </div>
+</div>
+
+<!-- amCharts 5 -->
+<script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/map.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/geodata/worldLow.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/plugins/exporting.js"></script>
+
+<script src="data.js"></script>
+<script src="data-un.js"></script>
+<script src="data-civs.js"></script>
+<script src="data-peoples.js"></script>
+<script src="i18n.js"></script>
+<script src="i18n-events.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
