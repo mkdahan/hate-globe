@@ -4,7 +4,7 @@ An interactive world map / 3D globe that answers a simple question:
 
 > **For a chosen people, which modern countries are tied to the most expulsions and murders of that people?**
 
-Open `index.html` in a browser. No install, no server, no account.
+Open **[the live app](https://mkdahan.github.io/hate-globe/)** or download the repo and open `index.html` in a browser. No install, no server, no account.
 
 ![Hate Globe — the Jews, globe view](docs/hate-globe.png)
 
